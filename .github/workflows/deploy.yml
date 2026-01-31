@@ -1,0 +1,31 @@
+name: Deploy Bot to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_vps
+          chmod 600 ~/.ssh/id_vps
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy bot
+        run: |
+          rsync -avz --delete \
+            --exclude node_modules --exclude .env \
+            -e "ssh -i ~/.ssh/id_vps" \
+            src/ package.json package-lock.json \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/lezgo/bot/
+
+      - name: Install deps & restart
+        run: |
+          ssh -i ~/.ssh/id_vps ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "cd /var/www/lezgo/bot && npm ci --production && pm2 restart lezgo-bot"
