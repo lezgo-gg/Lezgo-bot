@@ -22,7 +22,7 @@ jobs:
           rsync -avz --delete \
             --exclude node_modules --exclude .env \
             -e "ssh -i ~/.ssh/id_vps" \
-            src/ package.json package-lock.json \
+            src package.json package-lock.json \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/lezgo/bot/
 
       - name: Install deps & restart
