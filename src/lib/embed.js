@@ -2,10 +2,10 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 
 /**
  * Build the LFG.gg embed + button for the #lfg channel.
- * @param {string} guildId - Discord guild ID
+ * @param {string} token - Server access token
  * @returns {{ embeds: EmbedBuilder[], components: ActionRowBuilder[] }}
  */
-export function buildLfgEmbed(guildId) {
+export function buildLfgEmbed(token) {
   const baseUrl = process.env.LFG_BASE_URL || 'https://lfg.gg';
 
   const embed = new EmbedBuilder()
@@ -25,7 +25,7 @@ export function buildLfgEmbed(guildId) {
     new ButtonBuilder()
       .setLabel('Rejoindre LFG.gg')
       .setStyle(ButtonStyle.Link)
-      .setURL(`${baseUrl}/?server=${guildId}`)
+      .setURL(`${baseUrl}/?t=${token}`)
   );
 
   return { embeds: [embed], components: [button] };

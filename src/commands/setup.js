@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { SlashCommandBuilder, ChannelType, PermissionFlagsBits } from 'discord.js';
 import supabase from '../lib/supabase.js';
 import { buildLfgEmbed } from '../lib/embed.js';
@@ -29,9 +30,8 @@ export async function execute(interaction) {
       });
     }
 
-    // 2. Post the embed
-    const embedData = buildLfgEmbed(guild.id);
-    await lfgChannel.send(embedData);
+    // 2. Generate access token
+    const token = crypto.randomUUID();
 
     // 3. Upsert server in database
     const iconHash = guild.icon;
@@ -44,6 +44,7 @@ export async function execute(interaction) {
           guild_icon: iconHash || null,
           owner_discord_id: guild.ownerId,
           duoq_channel_id: lfgChannel.id,
+          access_token: token,
         },
         { onConflict: 'guild_id' }
       );
@@ -53,7 +54,11 @@ export async function execute(interaction) {
       return interaction.editReply('Erreur lors de l\'enregistrement du serveur en base.');
     }
 
-    // 4. Confirm
+    // 4. Post the embed with token
+    const embedData = buildLfgEmbed(token);
+    await lfgChannel.send(embedData);
+
+    // 5. Confirm
     await interaction.editReply(
       `LFG.gg configure ! L'embed a ete poste dans <#${lfgChannel.id}>.\n` +
       `Les membres peuvent maintenant cliquer pour rejoindre la communaute.`

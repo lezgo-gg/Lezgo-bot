@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, REST, Routes, Collection } from 'discord.js';
+import supabase from './lib/supabase.js';
 import * as setupCommand from './commands/setup.js';
 
 const client = new Client({
@@ -44,6 +45,36 @@ client.on('interactionCreate', async (interaction) => {
     } else {
       await interaction.reply(reply);
     }
+  }
+});
+
+// --- Bot removed from a guild → purge access ---
+client.on('guildDelete', async (guild) => {
+  console.log(`Bot removed from guild ${guild.id} (${guild.name})`);
+  try {
+    const { data: server } = await supabase
+      .from('servers')
+      .select('id')
+      .eq('guild_id', guild.id)
+      .single();
+
+    if (!server) return;
+
+    // Nullify access_token → existing embed links stop working
+    await supabase
+      .from('servers')
+      .update({ access_token: null })
+      .eq('id', server.id);
+
+    // Remove all members → immediate loss of access
+    await supabase
+      .from('server_members')
+      .delete()
+      .eq('server_id', server.id);
+
+    console.log(`Purged access for guild ${guild.id}`);
+  } catch (err) {
+    console.error('guildDelete cleanup error:', err);
   }
 });
 
